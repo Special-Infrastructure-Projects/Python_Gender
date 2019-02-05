@@ -1,0 +1,286 @@
+import soundex
+import Levenshtein
+import math
+s = soundex.getInstance()
+from difflib import SequenceMatcher
+
+file = open("name_gender_l.csv","r").read().split("\n")
+
+def last_three_chars(name):
+
+	male = []
+
+	female = []
+
+	both = []
+
+	for x in range(len(file)-1):
+
+		row = file[x].split(",")
+				
+		fore = row[0]
+			
+		midd = row[1]
+			
+		gend = row[2]
+
+		if gend == "Male":
+
+			male.append(fore[-3:])
+			
+			
+			if len(midd) > 0:
+		
+				male.append(midd[-3:])
+						
+		elif gend == "Female":
+			
+			female.append(fore[-3:])
+						
+			if len(midd) > 0:
+						
+				female.append(midd[-3:])
+					
+				
+	female_count = female.count(name[-3:])
+
+	male_count = male.count(name[-3:])
+
+	genders =['Male','Female']
+
+	gender_counts = [(male_count/len(male))*100,(female_count/len(female))*100]
+
+	location = gender_counts.index(max(gender_counts))
+
+	return (genders[location])
+
+
+def first_letter(name):
+
+	male = []
+	
+	female = []
+	
+	for x in range(len(file)-1):
+	
+		row = file[x].split(",")
+		
+		fore = row[0]
+			
+		midd = row[1]
+			
+		gend = row[2]
+		
+		if gend == "Male":
+		
+			male.append(fore[:1].lower())
+			
+			if len(midd) > 0:
+			
+				male.append(midd[:1].lower())
+
+		elif gend == "Female":
+
+			female.append(fore[:1].lower())
+			
+			if len(midd) > 0:
+			
+				female.append(midd[:1].lower())
+				
+	first_letter = (name[:1])
+	
+	genders = ['Male','Female']
+	
+	first_letter_counts = [(male.count(first_letter.lower())/len(male))*100,((female.count(first_letter.lower())/len(female))*100)]
+
+	return genders[first_letter_counts.index(max(first_letter_counts))]
+
+def middle_letters(name):
+
+	male = []
+	
+	female = []
+	
+	for x in range(len(file)-1):
+	
+		row = file[x].split(",")
+		
+		fore = row[0]
+			
+		midd = row[1]
+			
+		gend = row[2]
+		
+		if gend == "Male":
+		
+			male.append(fore[3:5].lower())
+			
+			if len(midd) > 0:
+			
+				male.append(midd[3:5].lower())
+
+		elif gend == "Female":
+
+			female.append(fore[3:5].lower())
+			
+			if len(midd) > 0:
+			
+				female.append(midd[3:5].lower())
+				
+	first_letter = name[3:5]
+	
+	genders = ['Male','Female']
+	
+	first_letter_counts = [(male.count(first_letter.lower())/len(male))*100,((female.count(first_letter.lower())/len(female))*100)]
+
+	return genders[first_letter_counts.index(max(first_letter_counts))]
+
+def get_last_letter(name):
+	
+	male = []
+	
+	female = []
+	
+	for x in range(len(file)-1):
+	
+		row = file[x].split(",")
+		
+		fore = row[0]
+		
+		midd = row[1]
+		
+		gend = row[2]
+		
+		if gend == "Male":
+		
+			male.append(fore[-1:])
+			
+			if len(midd) > 0:
+			
+				male.append(midd[-1:])
+			
+		elif gend == "Female":
+			
+			female.append(fore[-1:])
+			
+			if len(midd) > 0:
+			
+				female.append(midd[-1:])
+	
+	last_letter = name[-1:]
+	
+	genders = ['Male','Female']
+	
+	last_letter_counts = [(male.count(last_letter.lower())/len(male))*100,((female.count(last_letter.lower())/len(female))*100)]
+	
+	return genders[last_letter_counts.index(max(last_letter_counts))]
+
+def check_full_name():
+
+	male = []
+	
+	
+	female = []
+	
+	for x in range(len(file)-1):
+	
+		row = file[x].split(",")
+	
+		name = row[0]
+	
+		gend = row[2]
+		
+		if gend == "Male":
+			
+			if male.count(name) == 0:
+			
+				male.append(name)
+			
+		if gend == "Female":
+		
+			if female.count(name) == 0:
+		
+				female.append(name)
+		
+	return male, female
+		
+
+def check_name_gender(name):		
+
+	results = [middle_letters(name),last_three_chars(name),first_letter(name),get_last_letter(name)]
+
+	genders = ['Male','Female']
+
+	results =[results.count("Male"),results.count("Female")]
+	
+	if results[0] == results[1]:
+		
+		gender_ratios = [0,0]
+		
+		male_list, female_list = check_full_name()
+		
+		phonetics_count = [0,0]
+		
+		name_count = [0,0]
+		
+		lev_dist = [0,0]
+		
+		for y in range(len(male_list)):
+			
+			res = SequenceMatcher(a=name,b=male_list[y]).ratio()
+			
+			gender_ratios[0]+=(res)
+			
+			phonetic = s.soundex(name) == s.soundex(male_list[y])
+			
+			if phonetic is True:
+			
+				phonetics_count[0]+=1
+			
+			dif = Levenshtein.ratio(name, male_list[y])
+			
+			if dif == 1.0:
+			
+				lev_dist[0] += 10
+								
+			else:
+			
+				lev_dist[0] +=dif
+	
+		for y in range(len(female_list)):
+			
+			res = SequenceMatcher(a=name,b=female_list[y]).ratio()
+			
+			gender_ratios[1]+=(res)
+		
+			phonetic = s.soundex(name) == s.soundex(female_list[y])
+			
+			if phonetic is True:
+			
+				phonetics_count[1]+=1		
+		
+			dif = Levenshtein.ratio(name, female_list[y])
+			
+			if dif == 1.0:
+			
+				lev_dist[1] += 10
+
+			else:
+			
+				lev_dist[1] +=dif
+		
+		name_count = [male_list.count(name) / math.pi, female_list.count(name) / math.pi]	
+		
+		name_count_s = [name_count[0], name_count[1]]
+				
+		gender_ratios = [(gender_ratios[0] + (phonetics_count[0] * 30) + (lev_dist[0]/len(male_list) * 30))/len(male_list) * name_count_s[0],(gender_ratios[1] + (phonetics_count[1] * 30) + (lev_dist[1]/len(female_list)*30))/len(female_list) * name_count_s[1]]
+		
+		return (genders[gender_ratios.index(max(gender_ratios))])
+	else:
+	
+		return (genders[results.index(max(results))])
+		
+
+	
+	
+	
